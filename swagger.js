@@ -13,7 +13,7 @@ const swaggerDefinition = {
     },
     servers: [
         {
-            url: "http://localhost:8080", 
+            url: "http://13.60.162.157:8080",
         },
     ],
 };
