@@ -3,6 +3,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const db = require('./db.js');
+const { swaggerUi, swaggerSpec } = require('./swagger');
 
 // Load environment variables from a .env file
 dotenv.config();
@@ -43,6 +44,7 @@ const loginController = require('./controller/login');
 app.use('/', accountsController);
 app.use('/', transactionsController);
 app.use('/', loginController);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);

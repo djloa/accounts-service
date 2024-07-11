@@ -5,9 +5,69 @@ const Account = require('../models/accounts');
 const auth = require('../auth');
 const { body, param, validationResult } = require('express-validator');
 
+/**
+ * /**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *
+ * @swagger
+ * components:
+ *   schemas:
+ *     Balance:
+ *       type: object
+ *       required:
+ *         - amount
+ *         - currency
+ *       properties:
+ *         amount:
+ *           type: number
+ *           description: The balance amount
+ *           example: 100.50
+ *         currency:
+ *           type: string
+ *           description: The currency of the balance
+ *           example: USD
+ *     Account:
+ *       type: object
+ *       required:
+ *         - owner
+ *         - balance
+ *       properties:
+ *         owner:
+ *           type: string
+ *           description: The owner of the account
+ *           example: John Doe
+ *         balance:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Balance'
+ */
 
-
-// Define a route to get all accounts
+/**
+ * @swagger
+ * /accounts:
+ *   get:
+ *     summary: Retrieve a list of accounts
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Accounts]
+ *     responses:
+ *       200:
+ *         description: A list of accounts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Account'
+ *       500:
+ *         description: Server error
+ */
 router.get('/accounts', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), async (req, res) => {
   try {
     const accounts = await Account.find();
@@ -17,16 +77,38 @@ router.get('/accounts', auth.authenticateToken, auth.authorizeRole(['user', 'adm
   }
 });
 
-// Define a route to create an account
+/**
+ * @swagger
+ * /accounts:
+ *   post:
+ *     summary: Create a new account
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Accounts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Account'
+ *     responses:
+ *       200:
+ *         description: The created account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Account'
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Server error
+ */
 router.post('/accounts', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), [
-  // Validate and sanitize the owner field
   body('owner')
     .trim()
     .isString().withMessage('Owner must be a string')
     .notEmpty().withMessage('Owner cannot be empty')
     .escape(),
-
-  // Validate and sanitize the balance array
   body('balance').isArray().withMessage('Balance must be an array'),
   body('balance.*.amount')
     .isFloat({ min: 0 }).withMessage('Amount must be a non-negative number')
@@ -50,19 +132,48 @@ router.post('/accounts', auth.authenticateToken, auth.authorizeRole(['user', 'ad
   }
 });
 
-// Define a route to update an account
+/**
+ * @swagger
+ * /accounts/{id}:
+ *   put:
+ *     summary: Update an account by ID
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Accounts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The account ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Account'
+ *     responses:
+ *       200:
+ *         description: The updated account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Account'
+ *       400:
+ *         description: Validation error
+ *       404:
+ *         description: Account not found
+ *       500:
+ *         description: Server error
+ */
 router.put('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), [
-  // Validate and sanitize the id parameter
   param('id').isMongoId().withMessage('Invalid account ID'),
-
-  // Validate and sanitize the owner field
   body('owner')
     .trim()
     .isString().withMessage('Owner must be a string')
     .notEmpty().withMessage('Owner cannot be empty')
     .escape(),
-
-  // Validate and sanitize the balance array
   body('balance').isArray().withMessage('Balance must be an array'),
   body('balance.*.amount')
     .isFloat({ min: 0 }).withMessage('Amount must be a non-negative number')
@@ -85,9 +196,35 @@ router.put('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user', 
     res.status(500).json({ message: error.message });
   }
 });
-// Define a route to get an account by ID
+
+/**
+ * @swagger
+ * /accounts/{id}:
+ *   get:
+ *     summary: Retrieve an account by ID
+ *     security:
+ *       - bearerAuth: []
+ *     tags: [Accounts]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The account ID
+ *     responses:
+ *       200:
+ *         description: The account details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Account'
+ *       404:
+ *         description: Account not found
+ *       500:
+ *         description: Server error
+ */
 router.get('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), [
-  // Validate and sanitize the id parameter
   param('id').isMongoId().withMessage('Invalid account ID')
 ], async (req, res) => {
   try {
@@ -99,6 +236,4 @@ router.get('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user', 
   }
 });
 
-
-// Export the router to use it in other files
 module.exports = router;
