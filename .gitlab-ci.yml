@@ -27,7 +27,7 @@ build and push:
     - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
     - aws configure set region $AWS_REGION
     - aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/i0g1s5d6
-    - docker build -t $APP_NAME .
+    - docker build -t $APP_NAME -f Dockerfile .
     - docker tag $APP_NAME:latest $ECR_REPOSITORY_URI:latest
     - docker push $ECR_REPOSITORY_URI:latest
   only:

@@ -3,10 +3,12 @@ const router = express.Router();
 // Import the Account model
 const Account = require('../models/accounts');
 const auth = require('../auth');
+const { body, param, validationResult } = require('express-validator');
+
 
 
 // Define a route to get all accounts
-router.get('/accounts', auth.authenticateToken, auth.authorizeRole(['user']), async (req, res) => {
+router.get('/accounts', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), async (req, res) => {
   try {
     const accounts = await Account.find();
     res.json(accounts);
@@ -16,7 +18,26 @@ router.get('/accounts', auth.authenticateToken, auth.authorizeRole(['user']), as
 });
 
 // Define a route to create an account
-router.post('/accounts', auth.authenticateToken, auth.authorizeRole(['user']), async (req, res) => {
+router.post('/accounts', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), [
+  // Validate and sanitize the owner field
+  body('owner')
+    .trim()
+    .isString().withMessage('Owner must be a string')
+    .notEmpty().withMessage('Owner cannot be empty')
+    .escape(),
+
+  // Validate and sanitize the balance array
+  body('balance').isArray().withMessage('Balance must be an array'),
+  body('balance.*.amount')
+    .isFloat({ min: 0 }).withMessage('Amount must be a non-negative number')
+    .toFloat(),
+  body('balance.*.currency')
+    .trim()
+    .isString().withMessage('Currency must be a string')
+    .notEmpty().withMessage('Currency cannot be empty')
+    .isLength({ min: 3, max: 3 }).withMessage('Currency must be a 3-letter code')
+    .escape()
+], async (req, res) => {
   const account = new Account({
     owner: req.body.owner,
     balance: req.body.balance,
@@ -30,7 +51,29 @@ router.post('/accounts', auth.authenticateToken, auth.authorizeRole(['user']), a
 });
 
 // Define a route to update an account
-router.put('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user']), async (req, res) => {
+router.put('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), [
+  // Validate and sanitize the id parameter
+  param('id').isMongoId().withMessage('Invalid account ID'),
+
+  // Validate and sanitize the owner field
+  body('owner')
+    .trim()
+    .isString().withMessage('Owner must be a string')
+    .notEmpty().withMessage('Owner cannot be empty')
+    .escape(),
+
+  // Validate and sanitize the balance array
+  body('balance').isArray().withMessage('Balance must be an array'),
+  body('balance.*.amount')
+    .isFloat({ min: 0 }).withMessage('Amount must be a non-negative number')
+    .toFloat(),
+  body('balance.*.currency')
+    .trim()
+    .isString().withMessage('Currency must be a string')
+    .notEmpty().withMessage('Currency cannot be empty')
+    .isLength({ min: 3, max: 3 }).withMessage('Currency must be a 3-letter code')
+    .escape()
+], async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Account not found' });
@@ -43,7 +86,10 @@ router.put('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user'])
   }
 });
 // Define a route to get an account by ID
-router.get('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user']), async (req, res) => {
+router.get('/accounts/:id', auth.authenticateToken, auth.authorizeRole(['user', 'admin']), [
+  // Validate and sanitize the id parameter
+  param('id').isMongoId().withMessage('Invalid account ID')
+], async (req, res) => {
   try {
     const account = await Account.findById(req.params.id);
     if (!account) return res.status(404).json({ message: 'Account not found' });

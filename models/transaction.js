@@ -31,5 +31,4 @@ const TransactionSchema = new mongoose.Schema({
         required: true
     }
 });
-//arn:aws:logs:eu-north-1:471112601756:log-group:/aws/events/transactions
 module.exports = mongoose.model('Transaction', TransactionSchema)

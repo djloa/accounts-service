@@ -5,11 +5,38 @@ const Transaction = require('../models/transaction');
 const Account = require('../models/accounts');
 const transactionService = require('../service/transactionService');
 const auth = require('../auth');
+const { body, validationResult } = require('express-validator');
 
 
 
 // Define a route to create a transaction
-router.post('/transaction', auth.authenticateToken, auth.authorizeRole(['admin']), async (req, res) => {
+router.post('/transaction', auth.authenticateToken, auth.authorizeRole(['admin']), [
+    // Validate and sanitize account field
+    body('account')
+        .trim()
+        .isString().withMessage('Account must be a string')
+        .notEmpty().withMessage('Account cannot be empty')
+        .escape(),
+
+    // Validate and sanitize amount field
+    body('amount')
+        .isFloat({ min: 0 }).withMessage('Amount must be a non-negative number')
+        .toFloat(),
+
+    // Validate and sanitize transactionType field
+    body('transactionType')
+        .isIn(['INBOUND', 'OUTBOUND']).withMessage(`Transaction type must be one of: ${['INBOUND', 'OUTBOUND'].join(', ')}`)
+        .notEmpty().withMessage('Transaction type cannot be empty')
+        .escape(),
+
+    // Validate and sanitize currency field
+    body('currency')
+        .trim()
+        .isString().withMessage('Currency must be a string')
+        .notEmpty().withMessage('Currency cannot be empty')
+        .isLength({ min: 3, max: 3 }).withMessage('Currency must be a 3-letter code')
+        .escape()
+], async (req, res) => {
     const account = await Account.findById(req.body.account);
     let balance;
     if (!account) return res.status(404).json({ message: 'Account not found' });
